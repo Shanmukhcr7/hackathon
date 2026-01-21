@@ -7,143 +7,177 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #0a0a0c; color: #e2e8f0; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .glow-blue { box-shadow: 0 0 30px rgba(59, 130, 246, 0.15); }
-        .step-active { border-color: #3b82f6; background: rgba(59, 130, 246, 0.05); opacity: 1 !important; }
-        .step-complete { border-color: #10b981; background: rgba(16, 185, 129, 0.05); opacity: 0.6 !important; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
         
-        #countdown-overlay {
-            font-size: 10rem;
-            font-weight: 900;
-            text-shadow: 0 0 40px rgba(0,0,0,0.5);
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #0a0a0c; 
+            color: #e2e8f0;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        @keyframes pulse-ring {
-            0% { transform: scale(0.95); opacity: 0.5; }
-            50% { transform: scale(1.05); opacity: 0.8; }
-            100% { transform: scale(0.95); opacity: 0.5; }
+        .glass { 
+            background: rgba(255, 255, 255, 0.03); 
+            backdrop-filter: blur(16px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
         }
-        .pulse-animation { animation: pulse-ring 2s infinite; }
+
+        .step-active { 
+            border-color: #3b82f6; 
+            background: rgba(59, 130, 246, 0.1); 
+            transform: scale(1.02);
+        }
+
+        /* Countdown Animation */
+        @keyframes number-pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop { animation: number-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+        /* Scanning Line Animation */
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+        .scan-line {
+            height: 2px;
+            background: linear-gradient(to right, transparent, #3b82f6, transparent);
+            position: absolute;
+            width: 100%;
+            z-index: 10;
+            animation: scan 2s linear infinite;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #2d2d30; border-radius: 10px; }
     </style>
 </head>
-<body class="min-h-screen overflow-x-hidden">
-    <!-- Background Accents -->
-    <div class="fixed top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 blur-[120px] rounded-full -z-10"></div>
-    <div class="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-600/10 blur-[120px] rounded-full -z-10"></div>
+<body class="min-h-screen flex flex-col">
+    <!-- Animated Background -->
+    <div class="fixed inset-0 -z-10 overflow-hidden">
+        <div class="absolute top-[-10%] left-[-10%] w-[70%] h-[70%] bg-blue-600/10 blur-[120px] rounded-full"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[70%] h-[70%] bg-emerald-600/10 blur-[120px] rounded-full"></div>
+    </div>
 
-    <nav class="glass sticky top-0 z-50 px-8 py-4 flex justify-between items-center border-b border-white/5">
-        <div class="flex items-center gap-3">
-            <div class="bg-gradient-to-br from-blue-500 to-emerald-500 p-2 rounded-lg shadow-lg">
-                <i data-lucide="recycle" class="text-white w-6 h-6"></i>
+    <!-- Header -->
+    <nav class="glass sticky top-0 z-50 px-4 md:px-8 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-2 md:gap-3">
+            <div class="bg-blue-600 p-2 rounded-lg shadow-lg">
+                <i data-lucide="recycle" class="text-white w-5 h-5 md:w-6 md:h-6"></i>
             </div>
-            <span class="text-2xl font-bold tracking-tight text-white">SmartRecycle <span class="text-blue-500">AI</span></span>
+            <span class="text-xl md:text-2xl font-black tracking-tighter text-white">SMART<span class="text-blue-500">RECYCLE</span></span>
         </div>
-        <div class="flex gap-4">
-            <div id="hw-status" class="flex items-center gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/10">
-                <i data-lucide="cpu" class="w-4 h-4 text-emerald-500"></i>
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">System Ready</span>
-                <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-            </div>
+        <div id="hw-status" class="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-full border border-white/10">
+            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+            <span class="text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-400">System Live</span>
         </div>
     </nav>
 
-    <main class="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <!-- Left: Automated Timeline -->
-        <div class="lg:col-span-7 space-y-4">
-            <div id="step-0" class="glass p-5 rounded-2xl transition-all duration-500">
-                <div class="flex items-center gap-4">
-                    <div class="p-2 bg-white/5 rounded-lg text-slate-400 step-icon"><i data-lucide="scale" class="w-5 h-5"></i></div>
+    <main class="flex-grow flex flex-col lg:grid lg:grid-cols-12 gap-6 p-4 md:p-8 max-w-7xl mx-auto w-full">
+        
+        <!-- Left Column: Instructions & Status -->
+        <div class="order-2 lg:order-1 lg:col-span-4 flex flex-col gap-4">
+            <div class="space-y-2 mb-4">
+                <h1 class="text-3xl md:text-4xl font-black text-white leading-none">START HERE.</h1>
+                <p class="text-slate-400 text-sm md:text-base">Place your item and let the AI handle the sorting.</p>
+            </div>
+
+            <div id="timeline" class="space-y-3">
+                <div id="step-0" class="glass p-4 rounded-2xl flex items-center gap-4 transition-all duration-300">
+                    <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-500 step-icon"><i data-lucide="scale" class="w-5 h-5"></i></div>
                     <div>
-                        <h3 class="text-lg font-bold text-white">1. Calibration</h3>
-                        <p class="text-sm text-slate-500">Zeroing sensors for precision</p>
+                        <p class="text-xs font-bold text-blue-500 uppercase tracking-widest">Step 01</p>
+                        <h3 class="text-white font-bold">Scale Calibration</h3>
+                    </div>
+                </div>
+                <div id="step-1" class="glass p-4 rounded-2xl opacity-40 flex items-center gap-4 transition-all duration-300">
+                    <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-500 step-icon"><i data-lucide="camera" class="w-5 h-5"></i></div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Step 02</p>
+                        <h3 class="text-white font-bold">AI Visual Scan</h3>
+                    </div>
+                </div>
+                <div id="step-2" class="glass p-4 rounded-2xl opacity-40 flex items-center gap-4 transition-all duration-300">
+                    <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-500 step-icon"><i data-lucide="box" class="w-5 h-5"></i></div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Step 03</p>
+                        <h3 class="text-white font-bold">Hardware Sorting</h3>
                     </div>
                 </div>
             </div>
 
-            <div id="step-1" class="glass p-5 rounded-2xl opacity-40 transition-all duration-500">
-                <div class="flex items-center gap-4">
-                    <div class="p-2 bg-white/5 rounded-lg text-slate-400 step-icon"><i data-lucide="camera" class="w-5 h-5"></i></div>
-                    <div>
-                        <h3 class="text-lg font-bold text-white">2. Object Scanning</h3>
-                        <p class="text-sm text-slate-500">Visual identification via Gemini AI</p>
-                    </div>
-                </div>
-            </div>
-
-            <div id="step-2" class="glass p-5 rounded-2xl opacity-40 transition-all duration-500">
-                <div class="flex items-center gap-4">
-                    <div class="p-2 bg-white/5 rounded-lg text-slate-400 step-icon"><i data-lucide="zap" class="w-5 h-5"></i></div>
-                    <div>
-                        <h3 class="text-lg font-bold text-white">3. Automated Sorting</h3>
-                        <p class="text-sm text-slate-500">Activating hardware distribution</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Master Action Button -->
-            <div class="pt-6">
-                <button id="master-btn" onclick="startAutomation()" class="w-full py-6 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-xl shadow-2xl glow-blue flex items-center justify-center gap-4 transition-all active:scale-[0.98]">
-                    <i data-lucide="play" class="w-6 h-6 fill-current"></i>
-                    START RECYCLING
-                </button>
-            </div>
-
-            <div id="classification-result" class="hidden p-6 bg-blue-500/10 rounded-2xl border border-blue-500/20 animate-in fade-in slide-in-from-bottom-4">
-                <p class="text-xs uppercase font-bold text-blue-400 mb-1 tracking-widest">Classification Result</p>
-                <p id="label-text" class="text-2xl font-bold text-white capitalize">Detecting...</p>
-            </div>
+            <button id="master-btn" onclick="startAutomation()" class="mt-4 w-full py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3">
+                <i data-lucide="zap" class="fill-current w-6 h-6"></i>
+                RUN AUTOMATION
+            </button>
         </div>
 
-        <!-- Right: Realtime Monitoring -->
-        <div class="lg:col-span-5">
-            <div class="sticky top-28 space-y-6">
-                <!-- Preview Window -->
-                <div class="glass aspect-square rounded-3xl overflow-hidden relative group border-white/10 shadow-2xl">
-                    <img id="live-preview" class="w-full h-full object-cover hidden" src="" alt="Preview">
-                    
-                    <!-- Idle Placeholder -->
-                    <div id="placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-600">
-                        <i data-lucide="camera" class="w-20 h-20 mb-4 opacity-10"></i>
-                        <p class="font-bold uppercase tracking-widest text-xs opacity-30">Awaiting Signal</p>
+        <!-- Right Column: The "Box" (Visual Feed) -->
+        <div class="order-1 lg:order-2 lg:col-span-8 flex flex-col gap-6">
+            <div id="main-view-container" class="relative glass rounded-[2rem] overflow-hidden aspect-video lg:aspect-auto lg:h-full min-h-[300px] border-2 border-white/5 shadow-2xl">
+                
+                <!-- Live Preview Image -->
+                <img id="live-preview" class="absolute inset-0 w-full h-full object-cover hidden" src="" alt="Live Feed">
+                
+                <!-- Idle State -->
+                <div id="idle-state" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
+                    <div class="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
+                        <i data-lucide="camera-off" class="w-10 h-10 text-slate-700"></i>
                     </div>
-
-                    <!-- Countdown UI -->
-                    <div id="countdown-container" class="absolute inset-0 hidden flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] z-30">
-                        <p class="text-white font-black uppercase tracking-[0.3em] text-sm mb-4">Position Item</p>
-                        <div id="countdown-overlay" class="text-white animate-pulse">10</div>
-                    </div>
-
-                    <!-- Processing Overlay -->
-                    <div id="loading-overlay" class="absolute inset-0 bg-black/70 backdrop-blur-md hidden flex-col items-center justify-center z-40">
-                        <i data-lucide="loader-2" class="w-12 h-12 text-blue-500 animate-spin mb-4"></i>
-                        <p class="text-blue-400 font-black uppercase tracking-widest text-xs">AI Processing...</p>
-                    </div>
+                    <p class="text-slate-500 font-bold uppercase tracking-[0.2em] text-sm">Waiting for Start Signal</p>
                 </div>
 
-                <!-- Final Card -->
-                <div id="final-card" class="hidden glass p-8 rounded-3xl border-emerald-500/30 bg-emerald-500/5 text-center">
-                    <div class="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/40">
-                        <i data-lucide="check" class="text-white w-8 h-8"></i>
+                <!-- Countdown Overlay -->
+                <div id="countdown-overlay" class="absolute inset-0 z-40 bg-black/60 backdrop-blur-sm hidden flex flex-col items-center justify-center text-center p-6">
+                    <div class="mb-4 py-2 px-6 bg-blue-600 rounded-full shadow-lg">
+                        <p class="text-white font-black text-xs md:text-sm uppercase tracking-widest">Keep your waste in this box</p>
                     </div>
-                    <h2 class="text-2xl font-bold text-white">Reward Generated</h2>
-                    <div class="grid grid-cols-2 gap-4 mt-6">
-                        <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
-                            <p class="text-[10px] uppercase font-bold text-slate-500">Weight</p>
-                            <p id="res-weight" class="text-xl font-bold text-white">0g</p>
+                    <div id="timer-number" class="text-white text-8xl md:text-[12rem] font-black leading-none drop-shadow-2xl">10</div>
+                    <p class="text-blue-400 font-bold mt-4 animate-pulse">Positioning sensors...</p>
+                </div>
+
+                <!-- Scanning/Loading Overlay -->
+                <div id="loading-overlay" class="absolute inset-0 z-50 bg-blue-900/20 backdrop-blur-md hidden flex flex-col items-center justify-center">
+                    <div class="scan-line"></div>
+                    <div class="relative">
+                        <i data-lucide="loader-2" class="w-16 h-16 text-blue-500 animate-spin"></i>
+                    </div>
+                    <p id="loading-text" class="text-blue-400 font-black uppercase tracking-[0.3em] text-xs mt-6">Analyzing Material</p>
+                </div>
+
+                <!-- Success Overlay (The Result) -->
+                <div id="success-overlay" class="absolute inset-0 z-[60] bg-[#0a0a0c] hidden flex flex-col items-center justify-center p-4 md:p-8 animate-in fade-in duration-500">
+                    <div class="max-w-md w-full flex flex-col items-center">
+                        <div class="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/20">
+                            <i data-lucide="check" class="text-white w-8 h-8"></i>
                         </div>
-                        <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
-                            <p class="text-[10px] uppercase font-bold text-slate-500">Amount</p>
-                            <p id="res-reward" class="text-xl font-bold text-emerald-400">₹0</p>
+                        <h2 class="text-2xl md:text-3xl font-black text-white mb-6">RECYCLING COMPLETE</h2>
+                        
+                        <div class="grid grid-cols-2 gap-3 w-full mb-6">
+                            <div class="bg-white/5 p-4 rounded-2xl border border-white/10 text-center">
+                                <p class="text-[10px] font-bold text-slate-500 uppercase mb-1">Total Weight</p>
+                                <p id="res-weight" class="text-xl md:text-2xl font-black text-white">0g</p>
+                            </div>
+                            <div class="bg-white/5 p-4 rounded-2xl border border-white/10 text-center">
+                                <p class="text-[10px] font-bold text-slate-500 uppercase mb-1">Cash Reward</p>
+                                <p id="res-reward" class="text-xl md:text-2xl font-black text-emerald-400">₹0</p>
+                            </div>
                         </div>
+
+                        <div class="bg-white p-4 rounded-[2rem] shadow-2xl mb-6">
+                            <img id="res-qr" class="w-40 h-40 md:w-48 md:h-48" src="" alt="Reward QR">
+                        </div>
+                        
+                        <p class="text-slate-500 text-xs text-center mb-8">Scan QR code with your mobile app to claim reward.</p>
+
+                        <button onclick="location.reload()" class="w-full py-4 bg-white/10 hover:bg-white/20 rounded-2xl text-white font-black transition-all border border-white/10">
+                            START NEW SCAN
+                        </button>
                     </div>
-                    <div class="mt-6 bg-white p-3 rounded-2xl inline-block">
-                        <img id="res-qr" class="w-32 h-32" src="" alt="QR">
-                    </div>
-                    <button onclick="location.reload()" class="mt-8 w-full py-4 bg-white/5 hover:bg-white/10 rounded-xl text-white font-bold transition-all border border-white/10">
-                        Close & Refresh
-                    </button>
                 </div>
             </div>
         </div>
@@ -151,129 +185,141 @@
 
     <script>
         const API_BASE = "http://localhost:8000";
-        let isRunning = false;
+        let isProcessing = false;
 
         async function startAutomation() {
-            if(isRunning) return;
-            isRunning = true;
+            if(isProcessing) return;
+            isProcessing = true;
 
-            const btn = document.getElementById('master-btn');
-            updateBtn(btn, 'loader-2', 'CALIBRATING...', true);
-            
+            const masterBtn = document.getElementById('master-btn');
+            updateBtn(masterBtn, 'loader-2', 'CALIBRATING...', true);
+
             try {
-                // 1. Calibration Step
-                updateStepUI(0, 'active');
+                // STEP 1: Calibration
+                setStepUI(0, 'active');
                 await fetch(`${API_BASE}/measure-base`, { method: 'POST' });
-                updateStepUI(0, 'complete');
+                setStepUI(0, 'done');
 
-                // 2. Countdown Step
-                updateStepUI(1, 'active');
-                updateBtn(btn, 'camera', 'GET READY...', true);
+                // STEP 2: The Box Countdown
+                setStepUI(1, 'active');
+                updateBtn(masterBtn, 'camera', 'GET READY', true);
                 await runCountdown(10);
 
-                // 3. Capture Step
-                setOverlay(true);
-                updateBtn(btn, 'cpu', 'ANALYZING...', true);
+                // STEP 3: Analysis
+                setLoading(true, "AI Material Analysis");
+                updateBtn(masterBtn, 'cpu', 'ANALYZING...', true);
+                
                 const capRes = await fetch(`${API_BASE}/capture`, { method: 'POST' });
                 const capData = await capRes.json();
                 
-                // Show Preview
+                // Show the capture in the box
                 const preview = document.getElementById('live-preview');
                 preview.src = `data:image/jpeg;base64,${capData.image}`;
                 preview.classList.remove('hidden');
-                document.getElementById('placeholder').classList.add('hidden');
+                document.getElementById('idle-state').classList.add('hidden');
 
-                // 4. Classification
                 const classRes = await fetch(`${API_BASE}/classify`, { method: 'POST' });
                 const classData = await classRes.json();
-                
-                document.getElementById('classification-result').classList.remove('hidden');
-                document.getElementById('label-text').innerText = classData.category;
-                updateStepUI(1, 'complete');
 
-                // 5. Execution/Sorting
-                updateStepUI(2, 'active');
-                updateBtn(btn, 'recycle', 'SORTING...', true);
-                const procRes = await fetch(`${API_BASE}/process-waste`, {
+                // STEP 4: Sorting
+                setLoading(true, "Executing Sorting");
+                setStepUI(2, 'active');
+                updateBtn(masterBtn, 'package', 'SORTING...', true);
+
+                const sortRes = await fetch(`${API_BASE}/process-waste`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ type: classData.type })
                 });
-                const procData = await procRes.json();
-                updateStepUI(2, 'complete');
-
-                // 6. Final Results
-                showFinal(procData);
-                updateBtn(btn, 'refresh-ccw', 'NEW CYCLE', false);
-                btn.onclick = () => location.reload();
+                const sortData = await sortRes.json();
+                
+                setStepUI(2, 'done');
+                setLoading(false);
+                
+                // Show Result
+                showSuccess(sortData);
 
             } catch (err) {
                 console.error(err);
-                updateBtn(btn, 'alert-circle', 'SYSTEM ERROR', false);
-                isRunning = false;
-            } finally {
-                setOverlay(false);
+                updateBtn(masterBtn, 'alert-triangle', 'ERROR OCCURRED', false);
+                isProcessing = false;
             }
         }
 
         function runCountdown(seconds) {
             return new Promise((resolve) => {
-                const container = document.getElementById('countdown-container');
                 const overlay = document.getElementById('countdown-overlay');
-                container.classList.remove('hidden');
+                const timerText = document.getElementById('timer-number');
+                overlay.classList.remove('hidden');
                 
-                let timeLeft = seconds;
-                overlay.innerText = timeLeft;
+                let count = seconds;
+                timerText.innerText = count;
+                timerText.classList.add('animate-pop');
 
-                const timer = setInterval(() => {
-                    timeLeft--;
-                    overlay.innerText = timeLeft;
-                    if(timeLeft <= 0) {
-                        clearInterval(timer);
-                        container.classList.add('hidden');
+                const interval = setInterval(() => {
+                    count--;
+                    timerText.innerText = count;
+                    
+                    // Retrigger animation
+                    timerText.classList.remove('animate-pop');
+                    void timerText.offsetWidth; // trigger reflow
+                    timerText.classList.add('animate-pop');
+
+                    if(count <= 0) {
+                        clearInterval(interval);
+                        overlay.classList.add('hidden');
                         resolve();
                     }
                 }, 1000);
             });
         }
 
-        function updateStepUI(index, state) {
-            const el = document.getElementById(`step-${index}`);
-            const icon = el.querySelector('.step-icon');
-            
-            el.classList.remove('opacity-40', 'step-active', 'step-complete');
+        function setStepUI(index, state) {
+            const step = document.getElementById(`step-${index}`);
+            const icon = step.querySelector('.step-icon');
             
             if(state === 'active') {
-                el.classList.add('step-active');
+                step.classList.add('step-active');
+                step.classList.remove('opacity-40');
                 icon.classList.replace('bg-white/5', 'bg-blue-600');
-                icon.classList.replace('text-slate-400', 'text-white');
-            } else if(state === 'complete') {
-                el.classList.add('step-complete');
+                icon.classList.replace('text-slate-500', 'text-white');
+            } else if(state === 'done') {
+                step.classList.remove('step-active');
+                step.classList.add('opacity-40');
                 icon.classList.replace('bg-blue-600', 'bg-emerald-500');
-                icon.classList.replace('bg-white/5', 'bg-emerald-500');
-                icon.classList.replace('text-slate-400', 'text-white');
+                icon.querySelector('i').setAttribute('data-lucide', 'check');
+                lucide.createIcons();
             }
         }
 
-        function updateBtn(btn, iconName, text, disabled) {
-            btn.innerHTML = `<i data-lucide="${iconName}" class="${iconName === 'loader-2' ? 'animate-spin' : ''} w-6 h-6"></i> ${text}`;
+        function updateBtn(btn, icon, text, disabled) {
             btn.disabled = disabled;
-            if(disabled) btn.classList.add('opacity-50', 'cursor-not-allowed');
-            else btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            btn.innerHTML = `<i data-lucide="${icon}" class="${icon === 'loader-2' ? 'animate-spin' : ''} w-6 h-6"></i> ${text}`;
             lucide.createIcons();
+            if(disabled) btn.classList.add('opacity-50');
+            else btn.classList.remove('opacity-50');
         }
 
-        function setOverlay(show) {
+        function setLoading(show, text = "") {
             const overlay = document.getElementById('loading-overlay');
-            show ? overlay.classList.replace('hidden', 'flex') : overlay.classList.replace('flex', 'hidden');
+            const label = document.getElementById('loading-text');
+            if(show) {
+                overlay.classList.replace('hidden', 'flex');
+                label.innerText = text;
+            } else {
+                overlay.classList.replace('flex', 'hidden');
+            }
         }
 
-        function showFinal(data) {
-            document.getElementById('step-0').parentElement.classList.add('hidden');
-            document.getElementById('final-card').classList.remove('hidden');
+        function showSuccess(data) {
+            document.getElementById('success-overlay').classList.remove('hidden');
             document.getElementById('res-weight').innerText = `${data.weight}g`;
             document.getElementById('res-reward').innerText = `₹${data.amount}`;
             document.getElementById('res-qr').src = `data:image/png;base64,${data.qr_code}`;
+            
+            // Hide timeline and button to focus on success
+            document.getElementById('timeline').classList.add('hidden');
+            document.getElementById('master-btn').classList.add('hidden');
         }
 
         lucide.createIcons();
