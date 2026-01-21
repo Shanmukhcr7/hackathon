@@ -3,17 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartRecycle AI | Dashboard</title>
+    <title>SmartRecycle AI | Automated Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #0a0a0c; color: #e2e8f0; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .glow-blue { box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); }
-        .step-active { border-color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .animate-spin-slow { animation: spin 3s linear infinite; }
+        .glow-blue { box-shadow: 0 0 30px rgba(59, 130, 246, 0.15); }
+        .step-active { border-color: #3b82f6; background: rgba(59, 130, 246, 0.05); opacity: 1 !important; }
+        .step-complete { border-color: #10b981; background: rgba(16, 185, 129, 0.05); opacity: 0.6 !important; }
+        
+        #countdown-overlay {
+            font-size: 10rem;
+            font-weight: 900;
+            text-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.5; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+            100% { transform: scale(0.95); opacity: 0.5; }
+        }
+        .pulse-animation { animation: pulse-ring 2s infinite; }
     </style>
 </head>
 <body class="min-h-screen overflow-x-hidden">
@@ -30,50 +42,57 @@
         </div>
         <div class="flex gap-4">
             <div id="hw-status" class="flex items-center gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/10">
-                <i data-lucide="cpu" class="w-4 h-4 text-red-500"></i>
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Hardware</span>
-                <div class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
+                <i data-lucide="cpu" class="w-4 h-4 text-emerald-500"></i>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">System Ready</span>
+                <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
             </div>
         </div>
     </nav>
 
     <main class="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <!-- Left: Workflow -->
-        <div class="lg:col-span-7 space-y-6">
-            <div id="step-0" class="glass p-6 rounded-2xl transition-all duration-500 step-active">
-                <div class="flex items-center gap-4 mb-4">
-                    <div class="p-3 bg-blue-500 rounded-xl text-white shadow-lg"><i data-lucide="scale"></i></div>
-                    <h3 class="text-xl font-bold text-white">Calibration</h3>
+        <!-- Left: Automated Timeline -->
+        <div class="lg:col-span-7 space-y-4">
+            <div id="step-0" class="glass p-5 rounded-2xl transition-all duration-500">
+                <div class="flex items-center gap-4">
+                    <div class="p-2 bg-white/5 rounded-lg text-slate-400 step-icon"><i data-lucide="scale" class="w-5 h-5"></i></div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white">1. Calibration</h3>
+                        <p class="text-sm text-slate-500">Zeroing sensors for precision</p>
+                    </div>
                 </div>
-                <p class="text-slate-400 mb-6">Resetting the scale to zero for precision. Remove all items from the bin.</p>
-                <button onclick="runStep('measure-base')" id="btn-0" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
-                    Calibrate Scale <i data-lucide="chevron-right"></i>
+            </div>
+
+            <div id="step-1" class="glass p-5 rounded-2xl opacity-40 transition-all duration-500">
+                <div class="flex items-center gap-4">
+                    <div class="p-2 bg-white/5 rounded-lg text-slate-400 step-icon"><i data-lucide="camera" class="w-5 h-5"></i></div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white">2. Object Scanning</h3>
+                        <p class="text-sm text-slate-500">Visual identification via Gemini AI</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="step-2" class="glass p-5 rounded-2xl opacity-40 transition-all duration-500">
+                <div class="flex items-center gap-4">
+                    <div class="p-2 bg-white/5 rounded-lg text-slate-400 step-icon"><i data-lucide="zap" class="w-5 h-5"></i></div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white">3. Automated Sorting</h3>
+                        <p class="text-sm text-slate-500">Activating hardware distribution</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Master Action Button -->
+            <div class="pt-6">
+                <button id="master-btn" onclick="startAutomation()" class="w-full py-6 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-xl shadow-2xl glow-blue flex items-center justify-center gap-4 transition-all active:scale-[0.98]">
+                    <i data-lucide="play" class="w-6 h-6 fill-current"></i>
+                    START RECYCLING
                 </button>
             </div>
 
-            <div id="step-1" class="glass p-6 rounded-2xl opacity-40 transition-all duration-500">
-                <div class="flex items-center gap-4 mb-4">
-                    <div class="p-3 bg-white/10 rounded-xl text-slate-400"><i data-lucide="camera"></i></div>
-                    <h3 class="text-xl font-bold text-white">Visual Analysis</h3>
-                </div>
-                <p class="text-slate-400 mb-6">Place the item in the tray and scan. AI will identify the material.</p>
-                <button onclick="runStep('capture')" id="btn-1" disabled class="w-full py-4 bg-white text-black hover:bg-gray-200 rounded-xl font-bold flex items-center justify-center gap-2 transition-all opacity-50 cursor-not-allowed">
-                    Capture & Scan
-                </button>
-            </div>
-
-            <div id="step-2" class="glass p-6 rounded-2xl opacity-40 transition-all duration-500">
-                <div class="flex items-center gap-4 mb-4">
-                    <div class="p-3 bg-white/10 rounded-xl text-slate-400"><i data-lucide="scan-search"></i></div>
-                    <h3 class="text-xl font-bold text-white">Material Confirm</h3>
-                </div>
-                <div id="classification-result" class="hidden mb-6 p-4 bg-blue-500/10 rounded-xl border border-blue-500/20">
-                    <p class="text-xs uppercase font-bold text-blue-400 mb-1">AI Detection</p>
-                    <p id="label-text" class="text-xl font-bold text-white capitalize">---</p>
-                </div>
-                <button onclick="runStep('classify')" id="btn-2" disabled class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all opacity-50 cursor-not-allowed">
-                    Confirm & Sort
-                </button>
+            <div id="classification-result" class="hidden p-6 bg-blue-500/10 rounded-2xl border border-blue-500/20 animate-in fade-in slide-in-from-bottom-4">
+                <p class="text-xs uppercase font-bold text-blue-400 mb-1 tracking-widest">Classification Result</p>
+                <p id="label-text" class="text-2xl font-bold text-white capitalize">Detecting...</p>
             </div>
         </div>
 
@@ -81,39 +100,49 @@
         <div class="lg:col-span-5">
             <div class="sticky top-28 space-y-6">
                 <!-- Preview Window -->
-                <div class="glass aspect-square rounded-3xl overflow-hidden relative group border-white/10">
+                <div class="glass aspect-square rounded-3xl overflow-hidden relative group border-white/10 shadow-2xl">
                     <img id="live-preview" class="w-full h-full object-cover hidden" src="" alt="Preview">
+                    
+                    <!-- Idle Placeholder -->
                     <div id="placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-600">
-                        <i data-lucide="camera" class="w-16 h-16 mb-4 opacity-20"></i>
-                        <p class="font-semibold uppercase tracking-widest text-sm opacity-40">Awaiting Camera</p>
+                        <i data-lucide="camera" class="w-20 h-20 mb-4 opacity-10"></i>
+                        <p class="font-bold uppercase tracking-widest text-xs opacity-30">Awaiting Signal</p>
                     </div>
-                    <div id="loading-overlay" class="absolute inset-0 bg-black/60 backdrop-blur-sm hidden flex-col items-center justify-center z-20">
-                        <i data-lucide="loader-2" class="w-10 h-10 text-blue-500 animate-spin mb-3"></i>
-                        <p class="text-blue-500 font-bold uppercase tracking-widest text-xs">AI Processing</p>
+
+                    <!-- Countdown UI -->
+                    <div id="countdown-container" class="absolute inset-0 hidden flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] z-30">
+                        <p class="text-white font-black uppercase tracking-[0.3em] text-sm mb-4">Position Item</p>
+                        <div id="countdown-overlay" class="text-white animate-pulse">10</div>
+                    </div>
+
+                    <!-- Processing Overlay -->
+                    <div id="loading-overlay" class="absolute inset-0 bg-black/70 backdrop-blur-md hidden flex-col items-center justify-center z-40">
+                        <i data-lucide="loader-2" class="w-12 h-12 text-blue-500 animate-spin mb-4"></i>
+                        <p class="text-blue-400 font-black uppercase tracking-widest text-xs">AI Processing...</p>
                     </div>
                 </div>
 
-                <!-- Final Receipt (Success State) -->
-                <div id="final-card" class="hidden glass p-8 rounded-3xl border-emerald-500/30 bg-emerald-500/5 text-center animate-in fade-in zoom-in duration-500">
-                    <div class="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <!-- Final Card -->
+                <div id="final-card" class="hidden glass p-8 rounded-3xl border-emerald-500/30 bg-emerald-500/5 text-center">
+                    <div class="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/40">
                         <i data-lucide="check" class="text-white w-8 h-8"></i>
                     </div>
-                    <h2 class="text-2xl font-bold text-white">Process Complete</h2>
+                    <h2 class="text-2xl font-bold text-white">Reward Generated</h2>
                     <div class="grid grid-cols-2 gap-4 mt-6">
-                        <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
+                        <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
                             <p class="text-[10px] uppercase font-bold text-slate-500">Weight</p>
                             <p id="res-weight" class="text-xl font-bold text-white">0g</p>
                         </div>
-                        <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
-                            <p class="text-[10px] uppercase font-bold text-slate-500">Reward</p>
+                        <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                            <p class="text-[10px] uppercase font-bold text-slate-500">Amount</p>
                             <p id="res-reward" class="text-xl font-bold text-emerald-400">₹0</p>
                         </div>
                     </div>
-                    <div class="mt-6 bg-white p-4 rounded-xl inline-block">
+                    <div class="mt-6 bg-white p-3 rounded-2xl inline-block">
                         <img id="res-qr" class="w-32 h-32" src="" alt="QR">
                     </div>
-                    <button onclick="location.reload()" class="mt-8 w-full py-3 bg-white/10 hover:bg-white/20 rounded-xl text-white font-bold transition-all">
-                        New Scan
+                    <button onclick="location.reload()" class="mt-8 w-full py-4 bg-white/5 hover:bg-white/10 rounded-xl text-white font-bold transition-all border border-white/10">
+                        Close & Refresh
                     </button>
                 </div>
             </div>
@@ -122,74 +151,121 @@
 
     <script>
         const API_BASE = "http://localhost:8000";
-        let currentWasteType = null;
+        let isRunning = false;
 
-        async function updateStatus() {
-            try {
-                const res = await fetch(`${API_BASE}/status`);
-                const data = await res.json();
-                const statusDiv = document.getElementById('hw-status');
-                if(data.arduino_connected) {
-                    statusDiv.querySelector('i').classList.replace('text-red-500', 'text-emerald-500');
-                    statusDiv.querySelector('div').classList.replace('bg-red-500', 'bg-emerald-500');
-                    statusDiv.querySelector('div').classList.replace('shadow-[0_0_8px_rgba(239,68,68,0.5)]', 'shadow-[0_0_8px_rgba(16,185,129,0.5)]');
-                }
-            } catch(e) {}
-        }
+        async function startAutomation() {
+            if(isRunning) return;
+            isRunning = true;
 
-        async function runStep(type) {
-            setLoading(true);
+            const btn = document.getElementById('master-btn');
+            updateBtn(btn, 'loader-2', 'CALIBRATING...', true);
+            
             try {
-                if (type === 'measure-base') {
-                    await fetch(`${API_BASE}/measure-base`, { method: 'POST' });
-                    activateStep(1);
-                } 
-                else if (type === 'capture') {
-                    const res = await fetch(`${API_BASE}/capture`, { method: 'POST' });
-                    const data = await res.json();
-                    document.getElementById('live-preview').src = `data:image/jpeg;base64,${data.image}`;
-                    document.getElementById('live-preview').classList.remove('hidden');
-                    document.getElementById('placeholder').classList.add('hidden');
-                    activateStep(2);
-                }
-                else if (type === 'classify') {
-                    const res = await fetch(`${API_BASE}/classify`, { method: 'POST' });
-                    const data = await res.json();
-                    currentWasteType = data.type;
-                    document.getElementById('classification-result').classList.remove('hidden');
-                    document.getElementById('label-text').innerText = data.category;
-                    
-                    // Final Process call
-                    const procRes = await fetch(`${API_BASE}/process-waste`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ type: currentWasteType })
-                    });
-                    const procData = await procRes.json();
-                    showFinal(procData);
-                }
+                // 1. Calibration Step
+                updateStepUI(0, 'active');
+                await fetch(`${API_BASE}/measure-base`, { method: 'POST' });
+                updateStepUI(0, 'complete');
+
+                // 2. Countdown Step
+                updateStepUI(1, 'active');
+                updateBtn(btn, 'camera', 'GET READY...', true);
+                await runCountdown(10);
+
+                // 3. Capture Step
+                setOverlay(true);
+                updateBtn(btn, 'cpu', 'ANALYZING...', true);
+                const capRes = await fetch(`${API_BASE}/capture`, { method: 'POST' });
+                const capData = await capRes.json();
+                
+                // Show Preview
+                const preview = document.getElementById('live-preview');
+                preview.src = `data:image/jpeg;base64,${capData.image}`;
+                preview.classList.remove('hidden');
+                document.getElementById('placeholder').classList.add('hidden');
+
+                // 4. Classification
+                const classRes = await fetch(`${API_BASE}/classify`, { method: 'POST' });
+                const classData = await classRes.json();
+                
+                document.getElementById('classification-result').classList.remove('hidden');
+                document.getElementById('label-text').innerText = classData.category;
+                updateStepUI(1, 'complete');
+
+                // 5. Execution/Sorting
+                updateStepUI(2, 'active');
+                updateBtn(btn, 'recycle', 'SORTING...', true);
+                const procRes = await fetch(`${API_BASE}/process-waste`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ type: classData.type })
+                });
+                const procData = await procRes.json();
+                updateStepUI(2, 'complete');
+
+                // 6. Final Results
+                showFinal(procData);
+                updateBtn(btn, 'refresh-ccw', 'NEW CYCLE', false);
+                btn.onclick = () => location.reload();
+
             } catch (err) {
                 console.error(err);
-                alert("Communication Error. Is the backend terminal running?");
+                updateBtn(btn, 'alert-circle', 'SYSTEM ERROR', false);
+                isRunning = false;
             } finally {
-                setLoading(false);
+                setOverlay(false);
             }
         }
 
-        function activateStep(index) {
-            for(let i=0; i<=2; i++) {
-                const el = document.getElementById(`step-${i}`);
-                const btn = document.getElementById(`btn-${i}`);
-                if(i === index) {
-                    el.classList.add('step-active');
-                    el.classList.remove('opacity-40');
-                    btn.disabled = false;
-                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                } else {
-                    el.classList.remove('step-active');
-                    el.classList.add('opacity-40');
-                }
+        function runCountdown(seconds) {
+            return new Promise((resolve) => {
+                const container = document.getElementById('countdown-container');
+                const overlay = document.getElementById('countdown-overlay');
+                container.classList.remove('hidden');
+                
+                let timeLeft = seconds;
+                overlay.innerText = timeLeft;
+
+                const timer = setInterval(() => {
+                    timeLeft--;
+                    overlay.innerText = timeLeft;
+                    if(timeLeft <= 0) {
+                        clearInterval(timer);
+                        container.classList.add('hidden');
+                        resolve();
+                    }
+                }, 1000);
+            });
+        }
+
+        function updateStepUI(index, state) {
+            const el = document.getElementById(`step-${index}`);
+            const icon = el.querySelector('.step-icon');
+            
+            el.classList.remove('opacity-40', 'step-active', 'step-complete');
+            
+            if(state === 'active') {
+                el.classList.add('step-active');
+                icon.classList.replace('bg-white/5', 'bg-blue-600');
+                icon.classList.replace('text-slate-400', 'text-white');
+            } else if(state === 'complete') {
+                el.classList.add('step-complete');
+                icon.classList.replace('bg-blue-600', 'bg-emerald-500');
+                icon.classList.replace('bg-white/5', 'bg-emerald-500');
+                icon.classList.replace('text-slate-400', 'text-white');
             }
+        }
+
+        function updateBtn(btn, iconName, text, disabled) {
+            btn.innerHTML = `<i data-lucide="${iconName}" class="${iconName === 'loader-2' ? 'animate-spin' : ''} w-6 h-6"></i> ${text}`;
+            btn.disabled = disabled;
+            if(disabled) btn.classList.add('opacity-50', 'cursor-not-allowed');
+            else btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            lucide.createIcons();
+        }
+
+        function setOverlay(show) {
+            const overlay = document.getElementById('loading-overlay');
+            show ? overlay.classList.replace('hidden', 'flex') : overlay.classList.replace('flex', 'hidden');
         }
 
         function showFinal(data) {
@@ -200,14 +276,7 @@
             document.getElementById('res-qr').src = `data:image/png;base64,${data.qr_code}`;
         }
 
-        function setLoading(val) {
-            const overlay = document.getElementById('loading-overlay');
-            val ? overlay.classList.replace('hidden', 'flex') : overlay.classList.replace('flex', 'hidden');
-        }
-
         lucide.createIcons();
-        updateStatus();
-        setInterval(updateStatus, 3000);
     </script>
 </body>
 </html>
